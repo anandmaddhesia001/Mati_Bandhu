@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# Node (vite)
+node_modules/
+dist/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
