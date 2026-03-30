@@ -1,5 +1,6 @@
 import { Resend } from "resend";
-
+import dotenv from "dotenv";
+dotenv.config();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, text) => {
@@ -7,7 +8,7 @@ const sendEmail = async (to, subject, text) => {
 
     try {
         const response = await resend.emails.send({
-            from: "onboarding@resend.dev", // works without domain setup
+            from: "Green Life <noreply@greenweb.com>", // works without domain setup
             to,
             subject,
             text,
