@@ -24,7 +24,9 @@ const TestimonialSlider = () => {
     { name: 'Alice Johnson', message: 'A wonderful platform to help the environment! 🌍', img: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/new-year-background-736885_1280.jpg' },
   ];
 
-  const displayTestimonials = testimonials?.length ? testimonials : fallbackTestimonials;
+  const displayTestimonials = Array.isArray(testimonials) && testimonials.length > 0
+  ? testimonials
+  : fallbackTestimonials;
 
   if (loading) return <p className="text-center mt-8">Loading testimonials...</p>;
   if (error) return <p className="text-center text-red-500 mt-8">Error: {error}</p>;
