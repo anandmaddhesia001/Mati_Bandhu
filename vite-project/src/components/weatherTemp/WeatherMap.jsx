@@ -5,13 +5,35 @@ import axios from "axios";
 import loc from '../../assets/location-icon.png';
 import { FaCloudSun, FaWind, FaTint, FaLeaf, FaSmog, FaMapMarkerAlt } from "react-icons/fa";
 
-// OpenWeatherMap API Key (replace with your own API key)
-const key = import.meta.env.VITE_WEATHER_API_KEY;
+// Weather code mapping functions for Open-Meteo
+const getWeatherCondition = (code) => {
+  const conditions = {
+    0: "Clear", 1: "Clear", 2: "Partly Cloudy", 3: "Cloudy",
+    45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Drizzle",
+    61: "Rain", 63: "Rain", 65: "Rain", 66: "Freezing Rain", 67: "Freezing Rain",
+    71: "Snow", 73: "Snow", 75: "Snow", 77: "Snow",
+    80: "Rain", 81: "Rain", 82: "Rain", 85: "Snow", 86: "Snow",
+    95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm"
+  };
+  return conditions[code] || "Unknown";
+};
 
+const getWeatherIcon = (code) => {
+  const icons = {
+    0: "01d", 1: "01d", 2: "02d", 3: "03d",
+    45: "50d", 48: "50d", 51: "09d", 53: "09d", 55: "09d",
+    61: "10d", 63: "10d", 65: "10d", 66: "13d", 67: "13d",
+    71: "13d", 73: "13d", 75: "13d", 77: "13d",
+    80: "10d", 81: "10d", 82: "10d", 85: "13d", 86: "13d",
+    95: "11d", 96: "11d", 99: "11d"
+  };
+  return icons[code] || "01d";
+};
+
+// Open-Meteo API (no API key needed)
 const WeatherMap = () => {
   const [location, setLocation] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
-  const [airQualityData, setAirQualityData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,17 +60,24 @@ const WeatherMap = () => {
       const fetchWeatherData = async () => {
         try {
           setLoading(true);
-          // Fetch weather data
+          // Fetch weather data from Open-Meteo
           const weatherResponse = await axios.get(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${key}&units=metric`
+            `https://api.open-meteo.com/v1/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,weather_code&timezone=auto`
           );
-          setWeatherData(weatherResponse.data);
-
-          // Fetch air quality data
-          const airQualityResponse = await axios.get(
-            `https://api.openweathermap.org/data/2.5/air_pollution?lat=${location.latitude}&lon=${location.longitude}&appid=${key}`
-          );
-          setAirQualityData(airQualityResponse.data.list[0].main);
+          
+          // Transform Open-Meteo data to expected format
+          const transformedWeather = {
+            name: "Current Location",
+            sys: { country: "Unknown" },
+            weather: [{ main: getWeatherCondition(weatherResponse.data.current_weather.weather_code), icon: getWeatherIcon(weatherResponse.data.current_weather.weather_code) }],
+            main: { 
+              temp: weatherResponse.data.current_weather.temperature, 
+              humidity: weatherResponse.data.hourly.relative_humidity_2m ? weatherResponse.data.hourly.relative_humidity_2m[0] : 50 
+            },
+            wind: { speed: weatherResponse.data.current_weather.windspeed || 0 }
+          };
+          
+          setWeatherData(transformedWeather);
           setLoading(false);
         } catch (error) {
           setLoading(false);
@@ -75,29 +104,6 @@ const WeatherMap = () => {
 
   return (
     <div className="mt-10 max-w-3xl mx-auto">
-      {/* Air Quality */}
-      {airQualityData && !loading && (
-        <div className="mb-8 p-6 rounded-2xl shadow-xl bg-gradient-to-r from-green-50 via-emerald-100 to-lime-50 border border-green-200 flex items-center gap-6 animate-fade-in">
-          <FaSmog className="text-3xl text-green-400" />
-          <div>
-            <h3 className="text-xl font-bold text-green-700 mb-2 flex items-center gap-2">
-              <FaLeaf className="text-green-500" /> Air Quality Information
-            </h3>
-            <div className="text-gray-700 grid grid-cols-2 gap-x-8 gap-y-1">
-              <span className="flex items-center gap-2">
-                AQI: <span className="font-semibold text-green-800">{airQualityData.aqi}</span>
-              </span>
-              <span className="flex items-center gap-2">
-                CO: <span className="font-semibold text-green-800">{airQualityData.co} µg/m³</span>
-              </span>
-              <span className="flex items-center gap-2">
-                PM2.5: <span className="font-semibold text-green-800">{airQualityData.pm2_5} µg/m³</span>
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Map */}
       <div className="rounded-2xl shadow-2xl h-96 mb-8 border-2 border-green-200 overflow-hidden animate-fade-in">
         <MapContainer

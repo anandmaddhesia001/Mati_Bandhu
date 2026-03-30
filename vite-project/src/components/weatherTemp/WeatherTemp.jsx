@@ -6,22 +6,46 @@ import { toast } from "react-toastify"; // Import toast
 import "react-toastify/dist/ReactToastify.css"; // Import CSS for react-toastify
 import WeatherMap from "./WeatherMap";
 
-// Dummy weather data for fallback
 const dummyWeather = {
-  name: "Greenland",
-  sys: { country: "GL" },
+  name: "Unknown",
+  sys: { country: "--" },
   weather: [{ main: "Clear", icon: "01d" }],
-  main: { temp: 22, feels_like: 20, humidity: 40 },
-  wind: { speed: 5 },
+  main: { temp: 0, feels_like: 0, humidity: 0 },
+  wind: { speed: 0 }
 };
 
 const dummyForecast = [
-  { day: "Mon", temp: "20°C", condition: "Clear", icon: "01d" },
-  { day: "Tue", temp: "22°C", condition: "Partly Cloudy", icon: "02d" },
-  { day: "Wed", temp: "24°C", condition: "Cloudy", icon: "03d" },
-  { day: "Thu", temp: "19°C", condition: "Rainy", icon: "09d" },
-  { day: "Fri", temp: "21°C", condition: "Clear", icon: "01d" },
+  { day: "Mon", temp: 0, condition: "Clear", icon: "01d" },
+  { day: "Tue", temp: 0, condition: "Clear", icon: "01d" },
+  { day: "Wed", temp: 0, condition: "Clear", icon: "01d" },
+  { day: "Thu", temp: 0, condition: "Clear", icon: "01d" },
+  { day: "Fri", temp: 0, condition: "Clear", icon: "01d" }
 ];
+
+// Weather code mapping functions for Open-Meteo
+const getWeatherCondition = (code) => {
+  const conditions = {
+    0: "Clear", 1: "Clear", 2: "Partly Cloudy", 3: "Cloudy",
+    45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Drizzle",
+    61: "Rain", 63: "Rain", 65: "Rain", 66: "Freezing Rain", 67: "Freezing Rain",
+    71: "Snow", 73: "Snow", 75: "Snow", 77: "Snow",
+    80: "Rain", 81: "Rain", 82: "Rain", 85: "Snow", 86: "Snow",
+    95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm"
+  };
+  return conditions[code] || "Unknown";
+};
+
+const getWeatherIcon = (code) => {
+  const icons = {
+    0: "01d", 1: "01d", 2: "02d", 3: "03d",
+    45: "50d", 48: "50d", 51: "09d", 53: "09d", 55: "09d",
+    61: "10d", 63: "10d", 65: "10d", 66: "13d", 67: "13d",
+    71: "13d", 73: "13d", 75: "13d", 77: "13d",
+    80: "10d", 81: "10d", 82: "10d", 85: "13d", 86: "13d",
+    95: "11d", 96: "11d", 99: "11d"
+  };
+  return icons[code] || "01d";
+};
 
 export default function WeatherTemp() {
   const [query, setQuery] = useState("");
@@ -29,57 +53,37 @@ export default function WeatherTemp() {
   const [forecast, setForecast] = useState([]);
   const [hourlyWeather, setHourlyWeather] = useState([]);
   const [loading, setLoading] = useState(false);
-  const key = import.meta.env.VITE_WEATHER_API_KEY;
-
-  const groupForecastByDay = (list) => {
-    const days = {};
-    list.forEach((item) => {
-      const date = new Date(item.dt * 1000);
-      const day = date.toLocaleDateString("en-US", { weekday: "short" });
-      if (!days[day]) days[day] = [];
-      days[day].push(item);
-    });
-
-    return Object.entries(days)
-      .slice(0, 5)
-      .map(([day, entries]) => {
-        const temps = entries.map((e) => e.main.temp);
-        const avgTemp = (
-          temps.reduce((a, b) => a + b, 0) / temps.length
-        ).toFixed(1);
-        const condition = entries[0].weather[0].main;
-        const icon = entries[0].weather[0].icon;
-        return { day, temp: avgTemp, condition, icon };
-      });
-  };
-
-  const groupHourlyForecast = (list) => {
-    return list
-      .filter((item, idx) => idx % 3 === 0)
-      .map((item) => ({
-        time: new Date(item.dt * 1000).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        temp: item.main.temp,
-        condition: item.weather[0].main,
-        icon: item.weather[0].icon,
-      }));
-  };
 
   const fetchWeatherByCoords = async (latitude, longitude) => {
     try {
       setLoading(true);
       const weatherRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${key}&units=metric`
-      );
-      const forecastRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${key}&units=metric`
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`
       );
 
-      setWeather(weatherRes.data);
-      setForecast(groupForecastByDay(forecastRes.data.list));
-      setHourlyWeather(groupHourlyForecast(forecastRes.data.list));
+      // Transform Open-Meteo data to match expected format
+      const transformedWeather = {
+        name: "Current Location",
+        sys: { country: "Unknown" },
+        weather: [{ main: getWeatherCondition(weatherRes.data.current_weather.weather_code), icon: getWeatherIcon(weatherRes.data.current_weather.weather_code) }],
+        main: { 
+          temp: weatherRes.data.current_weather.temperature, 
+          feels_like: weatherRes.data.current_weather.temperature, 
+          humidity: weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50 
+        },
+        wind: { speed: 0 } // Open-Meteo doesn't provide wind in current_weather
+      };
+
+      const transformedForecast = weatherRes.data.daily.time.slice(0, 5).map((date, index) => ({
+        day: new Date(date).toLocaleDateString("en-US", { weekday: "short" }),
+        temp: `${weatherRes.data.daily.temperature_2m_max[index]}°C`,
+        condition: getWeatherCondition(weatherRes.data.daily.weather_code[index]),
+        icon: getWeatherIcon(weatherRes.data.daily.weather_code[index])
+      }));
+
+      setWeather(transformedWeather);
+      setForecast(transformedForecast);
+      setHourlyWeather([]); // Open-Meteo hourly data structure is different
     } catch {
       setWeather(dummyWeather);
       setForecast(dummyForecast);
@@ -111,16 +115,20 @@ export default function WeatherTemp() {
 
     try {
       setLoading(true);
-      const weatherRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${searchQuery}&appid=${key}&units=metric`
+      
+      // Geocode city to coordinates using Nominatim (free, no API key)
+      const geoRes = await axios.get(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=1`
       );
-      const forecastRes = await axios.get(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${searchQuery}&appid=${key}&units=metric`
-      );
-
-      setWeather(weatherRes.data);
-      setForecast(groupForecastByDay(forecastRes.data.list));
-      setHourlyWeather(groupHourlyForecast(forecastRes.data.list));
+      
+      if (geoRes.data.length === 0) {
+        toast.error("City not found.");
+        return;
+      }
+      
+      const { lat, lon } = geoRes.data[0];
+      await fetchWeatherByCoords(lat, lon);
+      
     } catch {
       toast.error("City not found.");
     } finally {
@@ -271,7 +279,7 @@ export default function WeatherTemp() {
                     className="w-16 h-16 mx-auto"
                   />
                   <p className="text-lg text-blue-700">{day.condition}</p>
-                  <p className="font-bold text-2xl text-green-800">{day.temp}°</p>
+                  <p className="font-bold text-2xl text-green-800">{day.temp}°C</p>
                 </div>
               ))}
             </div>

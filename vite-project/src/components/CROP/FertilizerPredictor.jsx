@@ -80,19 +80,17 @@ const FertilizerPredictor = () => {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
-          const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-          if (!apiKey) return;
-          const res = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
-            params: { lat: latitude, lon: longitude, appid: apiKey, units: "metric" },
-          });
-          const cityName = res.data.name;
-          setLocation(cityName);
-          const weather = res.data.main;
+          // Get weather from Open-Meteo
+          const weatherRes = await axios.get(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m&timezone=auto`
+          );
+          
+          setLocation("Current Location");
           setFormData((prev) => ({
             ...prev,
-            Temperature: weather.temp,
-            Humidity: weather.humidity,
-            Moisture: Math.min(100, weather.humidity * 0.5).toFixed(1),
+            Temperature: weatherRes.data.current_weather.temperature,
+            Humidity: weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50,
+            Moisture: Math.min(100, (weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50) * 0.5).toFixed(1),
           }));
         } catch (err) {
           setLocationAllowed(false);
@@ -104,18 +102,27 @@ const FertilizerPredictor = () => {
 
   const fetchWeather = async () => {
     try {
-      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
-      if (!apiKey) return alert("Missing OpenWeather API key!");
       if (!location.trim()) return alert("Please enter a valid city name.");
-      const res = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
-        params: { q: location, appid: apiKey, units: "metric" },
-      });
-      const weather = res.data.main;
+      
+      // Geocode city to coordinates
+      const geoRes = await axios.get(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
+      );
+      
+      if (geoRes.data.length === 0) return alert("City not found.");
+      
+      const { lat, lon } = geoRes.data[0];
+      
+      // Get weather from Open-Meteo
+      const weatherRes = await axios.get(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,relative_humidity_2m&timezone=auto`
+      );
+      
       setFormData((prev) => ({
         ...prev,
-        Temperature: weather.temp,
-        Humidity: weather.humidity,
-        Moisture: Math.min(100, weather.humidity * 0.5).toFixed(1),
+        Temperature: weatherRes.data.current_weather.temperature,
+        Humidity: weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50,
+        Moisture: Math.min(100, (weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50) * 0.5).toFixed(1),
       }));
     } catch (err) {
       alert("❌ Could not fetch weather data.");

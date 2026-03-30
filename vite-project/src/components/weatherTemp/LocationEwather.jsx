@@ -15,7 +15,30 @@ import {
   FaRegClock,
 } from "react-icons/fa";
 
-const key = import.meta.env.VITE_WEATHER_API_KEY;
+// Weather code mapping functions for Open-Meteo
+const getWeatherCondition = (code) => {
+  const conditions = {
+    0: "Clear", 1: "Clear", 2: "Partly Cloudy", 3: "Cloudy",
+    45: "Fog", 48: "Fog", 51: "Drizzle", 53: "Drizzle", 55: "Drizzle",
+    61: "Rain", 63: "Rain", 65: "Rain", 66: "Freezing Rain", 67: "Freezing Rain",
+    71: "Snow", 73: "Snow", 75: "Snow", 77: "Snow",
+    80: "Rain", 81: "Rain", 82: "Rain", 85: "Snow", 86: "Snow",
+    95: "Thunderstorm", 96: "Thunderstorm", 99: "Thunderstorm"
+  };
+  return conditions[code] || "Unknown";
+};
+
+const getWeatherIcon = (code) => {
+  const icons = {
+    0: "01d", 1: "01d", 2: "02d", 3: "03d",
+    45: "50d", 48: "50d", 51: "09d", 53: "09d", 55: "09d",
+    61: "10d", 63: "10d", 65: "10d", 66: "13d", 67: "13d",
+    71: "13d", 73: "13d", 75: "13d", 77: "13d",
+    80: "10d", 81: "10d", 82: "10d", 85: "13d", 86: "13d",
+    95: "11d", 96: "11d", 99: "11d"
+  };
+  return icons[code] || "01d";
+};
 
 export default function LocationWeather() {
   const [weather, setWeather] = useState(null);
@@ -32,16 +55,34 @@ export default function LocationWeather() {
 
       try {
         const weatherRes = await axios.get(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${key}&units=metric`
-        );
-        setWeather(weatherRes.data);
-
-        const forecastRes = await axios.get(
-          `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${key}&units=metric`
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`
         );
 
-        setForecast(groupForecastByDay(forecastRes.data.list));
-        setHourlyForecast(forecastRes.data.list);
+        // Transform Open-Meteo data to expected format
+        const transformedWeather = {
+          name: "Current Location",
+          sys: { country: "Unknown" },
+          weather: [{ main: getWeatherCondition(weatherRes.data.current_weather.weather_code), icon: getWeatherIcon(weatherRes.data.current_weather.weather_code) }],
+          main: { 
+            temp: weatherRes.data.current_weather.temperature, 
+            humidity: weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50 
+          },
+          wind: { speed: weatherRes.data.current_weather.windspeed || 0 }
+        };
+
+        setWeather(transformedWeather);
+
+        // Transform forecast data
+        const transformedForecast = weatherRes.data.daily.time.slice(0, 5).map((date, index) => ({
+          day: new Date(date).toLocaleDateString("en-US", { weekday: "short" }),
+          temp: `${weatherRes.data.daily.temperature_2m_max[index]}°C`,
+          condition: getWeatherCondition(weatherRes.data.daily.weather_code[index]),
+          icon: getWeatherIcon(weatherRes.data.daily.weather_code[index])
+        }));
+
+        setForecast(transformedForecast);
+        setHourlyForecast([]); // Open-Meteo hourly data structure is different
+
       } catch (err) {
         console.error("Could not fetch weather:", err);
       } finally {
@@ -49,26 +90,6 @@ export default function LocationWeather() {
       }
     });
   }, []);
-
-  const groupForecastByDay = (list) => {
-    const days = {};
-    list.forEach((item) => {
-      const date = new Date(item.dt * 1000);
-      const day = date.toLocaleDateString("en-US", { weekday: "short" });
-      if (!days[day]) days[day] = [];
-      days[day].push(item);
-    });
-
-    return Object.entries(days).slice(0, 3).map(([day, entries]) => {
-      const temps = entries.map((e) => e.main.temp);
-      const avgTemp = (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1);
-      const minTemp = Math.min(...temps).toFixed(1);
-      const maxTemp = Math.max(...temps).toFixed(1);
-      const condition = entries[0].weather[0].main;
-      const icon = entries[0].weather[0].icon;
-      return { day, temp: avgTemp, minTemp, maxTemp, condition, icon };
-    });
-  };
 
   if (loading) {
     return (

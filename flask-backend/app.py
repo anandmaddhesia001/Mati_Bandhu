@@ -156,27 +156,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import numpy as np
@@ -190,7 +169,8 @@ import joblib
 
 from utils.disease import disease_dic
 from utils.model import ResNet9
-
+from dotenv import load_dotenv
+load_dotenv()
 # ------------------ Disease classes ------------------
 disease_classes = [
     "Apple___Apple_scab", "Apple___Black_rot", "Apple___Cedar_apple_rust",
@@ -213,7 +193,7 @@ disease_classes = [
 # ------------------ Paths ------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DISEASE_MODEL_FILE = os.path.join(BASE_DIR, "models/plant_disease_model.pth")
-CROP_MODEL_FILE = os.path.join(BASE_DIR, "models/crop.pkl")
+CROP_MODEL_FILE = os.path.join(BASE_DIR, "models/RandomForest.pkl")
 FERT_CAT_FILE = os.path.join(BASE_DIR, "models/categorical_model.joblib")
 FERT_NUM_FILE = os.path.join(BASE_DIR, "models/numerical_model.joblib")
 FERT_PREP_FILE = os.path.join(BASE_DIR, "models/preprocessor.joblib")
@@ -322,8 +302,10 @@ def crop_prediction():
                 "Run `git lfs install && git lfs pull`."
             )
         crop_model = joblib.load(CROP_MODEL_FILE)
+        print(f"Model type: {type(crop_model)}")
         data = np.array([[request.json[k] for k in ['nitrogen','phosphorous','pottasium','temperature','humidity','ph','rainfall']]])
         prediction = crop_model.predict(data)
+        print(f"📊 Crop prediction input: {data.tolist()}, output: {prediction[0]}")
         return jsonify({"prediction": prediction[0]})
     except Exception as e:
         print("❌ Error in /crop-predict:", str(e))
@@ -349,6 +331,6 @@ def predict_fertilizer():
 
 # ------------------ Entrypoint ------------------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 7000))
     print(f"🚀 Starting Flask on port {port}")
     app.run(host="0.0.0.0", port=port, debug=True)

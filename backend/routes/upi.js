@@ -40,14 +40,8 @@ router.post('/', authenticate, upload.single('qrImage'), async (req, res) => {
 
 router.get('/', authenticate, async (req, res) => {
   try {
-  
-    const upi = await Upi.find({ user: req.user.id }); 
-    console.log(upi);
-    if (upi.length === 0) {
-      return res.status(404).json({ error: 'No UPI details found' });
-    }  
-
-    res.json(upi); 
+    const upi = await Upi.find({ user: req.user.id });
+    return res.json(upi); // always OK
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -55,9 +49,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 
-
-
-// ✏️ Update UPI
+//  Update UPI
 router.put('/:id', authenticate, upload.single('qrImage'), async (req, res) => {
   try {
     const upi = await Upi.findOne({ _id: req.params.id, user: req.user.id });

@@ -60,13 +60,14 @@ export default function CropPredictor() {
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const apiKey = import.meta.env.VITE_WEATHER_API_KEY;
-          const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
-          const response = await axios.get(url);
-          const { temp, humidity } = response.data.main;
-          const rain1h = response.data.rain?.["1h"];
-          const rain3h = response.data.rain?.["3h"];
-          const rainfall = rain1h ?? rain3h ?? 0;
+          // Get weather from Open-Meteo
+          const weatherRes = await axios.get(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m,relative_humidity_2m,rain&daily=precipitation_sum&timezone=auto`
+          );
+          
+          const temp = weatherRes.data.current_weather.temperature;
+          const humidity = weatherRes.data.hourly.relative_humidity_2m ? weatherRes.data.hourly.relative_humidity_2m[0] : 50;
+          const rainfall = weatherRes.data.daily.precipitation_sum ? weatherRes.data.daily.precipitation_sum[0] : 0;
 
           setFormData((prev) => ({
             ...prev,

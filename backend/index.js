@@ -10,6 +10,7 @@ import testimonialRoutes from './routes/testimonials.js';
 import upiRoutes from './routes/upi.js';
 import  plantRoutes from "./routes/plantRoutes.js"
 import environmentRoutes from "./routes/environmentRoutes.js"
+import emailRoutes from "./routes/email.js";
 
 dotenv.config();
 const app = express();
@@ -17,17 +18,17 @@ const app = express();
 // ✅ Secure CORS: Allow only frontend URL
 const allowedOrigins = [process.env.FRONTEND_URL];
 
-app.use(cors({
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    credentials: true, // if you're using cookies or Authorization headers
-}));
-
+// app.use(cors({
+//     origin: function (origin, callback) {
+//         if (!origin || allowedOrigins.includes(origin)) {
+//             callback(null, true);
+//         } else {
+//             callback(new Error('Not allowed by CORS'));
+//         }
+//     },
+//     credentials: true, // if you're using cookies or Authorization headers
+// }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // Routes
@@ -39,7 +40,8 @@ app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/upi', upiRoutes);
 app.use("/api/plants", plantRoutes);
 app.use("/api/environment-news", environmentRoutes);
-
+app.use("/api/email", emailRoutes);
+console.log("MONGO_URI from env:", process.env.MONGO_URI);
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log("✅ Connected to MongoDB");

@@ -1,8 +1,7 @@
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import AdaBoostClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
 
@@ -32,12 +31,9 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"Training samples: {X_train.shape[0]}, Testing samples: {X_test.shape[0]}")
 
 # ---------------------------
-# Step 4: Train AdaBoost model
+# Step 4: Train RandomForest model
 # ---------------------------
-base_estimator = DecisionTreeClassifier(max_depth=3)
-
-# Note: 'base_estimator' is deprecated in sklearn 1.7+, use 'estimator'
-model = AdaBoostClassifier(estimator=base_estimator, n_estimators=50, random_state=42)
+model = RandomForestClassifier(n_estimators=100, random_state=42)
 model.fit(X_train, y_train)
 print("Model trained successfully.")
 
@@ -52,7 +48,7 @@ print(classification_report(y_test, y_pred))
 # ---------------------------
 # Step 6: Save trained model
 # ---------------------------
-model_path = os.path.join(script_dir, "crop.pkl")
+model_path = os.path.join(script_dir, "../models/RandomForest.pkl")
 joblib.dump(model, model_path)
 print(f"Model saved successfully at: {model_path}")
 
