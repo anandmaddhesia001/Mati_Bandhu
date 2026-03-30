@@ -2,13 +2,22 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import authRoutes from "./routes/auth.js";
+import itemRoutes from './routes/items.js';
+import blogRoutes from './routes/blog.js';
+import leaderBlog from './routes/submissionRoutes.js';
+import testimonialRoutes from './routes/testimonials.js';
+import upiRoutes from './routes/upi.js';
+import  plantRoutes from "./routes/plantRoutes.js"
+import environmentRoutes from "./routes/environmentRoutes.js"
+import emailRoutes from "./routes/email.js";
 
 dotenv.config();
 const app = express();
 
-app.use(express.json());
-
-const allowedOrigins = [process.env.FRONTEND_URL];
+const allowedOrigins = [
+  process.env.FRONTEND_URL
+];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -20,8 +29,7 @@ app.use(cors({
   },
   credentials: true
 }));
-
-app.options("*", cors());
+app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -33,28 +41,15 @@ app.use('/api/upi', upiRoutes);
 app.use("/api/plants", plantRoutes);
 app.use("/api/environment-news", environmentRoutes);
 app.use("/api/email", emailRoutes);
-
-// Root route
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: err.message || "Internal Server Error"
-  });
-});
-
+console.log("MONGO_URI from env:", process.env.MONGO_URI);
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("✅ Connected to MongoDB");
-    app.listen(process.env.PORT || 5000, () => {
-      console.log(`🚀 Server started`);
+    .then(() => {
+        console.log("✅ Connected to MongoDB");
+        app.listen(process.env.PORT || 5000, () => {
+            console.log(`🚀 Server started on port ${process.env.PORT || 5000}`);
+        });
+    })
+    .catch((err) => {
+        console.error("❌ DB Connection Error:", err.message);
+        process.exit(1); // Exit the process if DB fails to connect
     });
-  })
-  .catch((err) => {
-    console.error("❌ DB Connection Error:", err.message);
-    process.exit(1);
-  });
