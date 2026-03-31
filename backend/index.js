@@ -8,7 +8,7 @@ import blogRoutes from './routes/blog.js';
 import leaderBlog from './routes/submissionRoutes.js';
 import testimonialRoutes from './routes/testimonials.js';
 import upiRoutes from './routes/upi.js';
-import  plantRoutes from "./routes/plantRoutes.js"
+import plantRoutes from "./routes/plantRoutes.js"
 import environmentRoutes from "./routes/environmentRoutes.js"
 import emailRoutes from "./routes/email.js";
 

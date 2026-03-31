@@ -46,7 +46,7 @@ If you did not initiate this login, please secure your account immediately.
 Happy Growing! 🌼
 – The Green Life Team`
             );
-            console.log('✅ Welcome email sent!', info.messageId);
+            console.log('✅ Welcome email sent!', info?.data?.id);
         } catch (emailErr) {
             console.error('❌ Failed to send welcome email:', emailErr.message);
         }
