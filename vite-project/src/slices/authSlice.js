@@ -40,6 +40,7 @@ export const { authStart, authSuccess, authFailure, logout } = authSlice.actions
 export const loginUser = (credentials) => async (dispatch) => {
   dispatch(authStart());
   try {
+    console.log(import.meta.env.VITE_API_BASE_URL);
     const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, credentials);
     dispatch(authSuccess(response.data));
     return { success: true };

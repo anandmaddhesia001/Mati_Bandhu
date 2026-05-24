@@ -5,7 +5,6 @@ import Add from './AI/Add'
 import AddItem from './itemcreate/AddItem'
 import MoveToList from './ListingArea/MoveToList'
 import AddBlogList from './Blog/AddBlogList'
-import TreeModel from './TreeModel'
 import ImpactStats from './ImpactStates'
 import Leaderboard from './Reward/Leaderboard'
 import InfoCardGrid from './UI/InfoCardGrid'
@@ -39,8 +38,7 @@ function Middle() {
     <About/> */}
     <Contact/>
     {/* <MoveToList/>
-    <AddItem/>
-    <TreeModel/> */}
+    <AddItem/> */}
   </>
   )
 }
