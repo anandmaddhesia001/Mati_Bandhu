@@ -16,7 +16,7 @@ import {
   FaSun,
   FaCheckCircle,
 } from "react-icons/fa";
-const API = import.meta.env.VITE_API_URL;
+const API = import.meta.env.VITE_DISEASE_API || import.meta.env.VITE_API_URL || 'http://localhost:7002';
 
 const DiseasePredictor = () => {
   const [selectedFile, setSelectedFile] = useState(null);

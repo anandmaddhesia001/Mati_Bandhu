@@ -16,7 +16,7 @@ import {
   FaRegSnowflake,
   FaRegSmileBeam,
 } from "react-icons/fa";
-const API = import.meta.env.VITE_API_URL;
+const API = import.meta.env.VITE_CROP_API || import.meta.env.VITE_API_URL || 'http://localhost:7001';
 
 const fieldIcons = {
   nitrogen: <FaSeedling className="text-green-500" />,
