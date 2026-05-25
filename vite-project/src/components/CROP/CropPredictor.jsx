@@ -16,6 +16,7 @@ import {
   FaRegSnowflake,
   FaRegSmileBeam,
 } from "react-icons/fa";
+const API = import.meta.env.VITE_API_URL;
 
 const fieldIcons = {
   nitrogen: <FaSeedling className="text-green-500" />,
@@ -119,7 +120,7 @@ export default function CropPredictor() {
     setImage(null);
 
     try {
-      const response = await axios.post("http://127.0.0.1:7000/crop-predict", {
+      const response = await axios.post(`${API}/crop-predict`, {
         nitrogen: parseFloat(formData.nitrogen),
         phosphorous: parseFloat(formData.phosphorous),
         pottasium: parseFloat(formData.pottasium),

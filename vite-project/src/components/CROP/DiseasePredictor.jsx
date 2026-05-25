@@ -16,6 +16,7 @@ import {
   FaSun,
   FaCheckCircle,
 } from "react-icons/fa";
+const API = import.meta.env.VITE_API_URL;
 
 const DiseasePredictor = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -47,7 +48,7 @@ const DiseasePredictor = () => {
     try {
       setLoading(true);
       const response = await axios.post(
-        "http://127.0.0.1:7000/disease-predict",
+        `${API}/disease-predict`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );

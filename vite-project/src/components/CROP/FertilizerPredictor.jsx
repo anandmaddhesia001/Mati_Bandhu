@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaSeedling, FaLeaf, FaTractor, FaCheckCircle, FaRegSmileBeam } from "react-icons/fa";
+const API = import.meta.env.VITE_API_URL;
 
 const fieldSuggestions = {
   Temperature: "Current air temperature in °C (auto-fetched if location is allowed).",
@@ -195,7 +196,7 @@ const FertilizerPredictor = () => {
         payload[backendKeyMap[key]] =
           isNaN(parseFloat(formData[key])) || formData[key] === "" ? formData[key] : parseFloat(formData[key]);
       });
-      const res = await axios.post("http://127.0.0.1:7000/predict/fertilizer", payload);
+      const res = await axios.post(`${API}/predict/fertilizer`, payload);
       setResult(res.data);
       generateAIResponse(language, res.data);
     } catch {
